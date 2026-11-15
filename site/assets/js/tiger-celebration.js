@@ -1,173 +1,131 @@
-/* Tiger at the viewport centre; keyed explosion covers the viewport in front. */
+/* One prerendered clip contains the completed effect and its transparency mask. */
 (function () {
   'use strict';
   const button = document.getElementById('tiger-egg');
-  const canvas = document.createElement('canvas');
-  canvas.id = 'tiger-fx';
-  document.body.appendChild(canvas);
-  if (!button || !canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  if (!button) return;
   const source = document.currentScript.src;
   const media = name => new URL('../media/' + name, source).href;
-  const starts = [0, 3.95];
-  const blastLead = .30; // Skip the explosion clip's empty green lead-in.
-  let generation = 0, frame = 0, active = false, prepared;
-  let audioContext, soundBuffer, sounds = [], lastPaint = 0, nextBlast = 0;
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  canvas.setAttribute('aria-hidden', 'true');
-  canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9998';
-  function track(name, width, height) {
-    const video = document.createElement('video');
-    video.muted = true; video.playsInline = true; video.preload = 'none';
-    video.src = media(name);
-    const surface = document.createElement('canvas');
-    surface.width = width; surface.height = height;
-    return {video, surface, ctx:surface.getContext('2d', {willReadFrequently:true}), time:-1};
-  }
-  const tiger = track('tiger-run.mp4', 360, 640);
-  const blast = track('tiger-explosion.mp4', 960, 540);
+  const canvas = document.createElement('canvas');
+  canvas.id = 'tiger-fx'; canvas.setAttribute('aria-hidden','true');
+  canvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9998';
+  document.body.appendChild(canvas);
+  const ctx=canvas.getContext('2d');
+  if (!ctx) return;
+  const video=document.createElement('video');
+  video.id='tiger-effect-video'; video.playsInline=true; video.preload='auto';
+  video.volume=.7; video.tabIndex=-1; video.setAttribute('aria-hidden','true');
+  video.style.cssText='position:fixed;width:1px;height:1px;opacity:0;pointer-events:none';
+  document.body.appendChild(video);
+  const packed=document.createElement('canvas'), image=document.createElement('canvas');
+  const packedCtx=packed.getContext('2d',{willReadFrequently:true});
+  const imageCtx=image.getContext('2d');
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+  let generation=0,active=false,starting=false,callback=0,raf=0,timer=0,lastTime=-1;
+  let asset='',ready=false,hasImage=false;
   function resize() {
-    const ratio = Math.min(1.5, window.devicePixelRatio || 1,
-      Math.sqrt(1500000 / (innerWidth * innerHeight)));
-    canvas.width = Math.round(innerWidth * ratio);
-    canvas.height = Math.round(innerHeight * ratio);
+    const ratio=Math.min(1.5,devicePixelRatio||1,Math.sqrt(1500000/(innerWidth*innerHeight)));
+    canvas.width=Math.round(innerWidth*ratio);canvas.height=Math.round(innerHeight*ratio);
+    if(active && hasImage)draw();
   }
-  function load(video) {
-    if (video.readyState >= 2) return Promise.resolve();
-    return new Promise((resolve,reject) => {
-      const timer = setTimeout(() => finish(new Error('Media load timeout')), 20000);
-      function finish(error) {
-        clearTimeout(timer); video.removeEventListener('loadeddata', ready);
-        video.removeEventListener('error', fail);
-        error ? reject(error) : resolve();
+  function draw() {
+    const w=canvas.width,h=canvas.height,scale=Math.max(w/image.width,h/image.height);
+    ctx.clearRect(0,0,w,h);
+    ctx.drawImage(image,(w-image.width*scale)/2,(h-image.height*scale)/2,image.width*scale,image.height*scale);
+  }
+  function render(time) {
+    if(video.readyState<2)return;
+    if(time===lastTime && hasImage){draw();return;}
+    lastTime=time;
+    // Read one decoded frame once. Both the finished picture and its matte share it.
+    packedCtx.drawImage(video,0,0,packed.width,packed.height);
+    const pixels=packedCtx.getImageData(0,0,packed.width,packed.height).data;
+    const result=imageCtx.createImageData(image.width,image.height),out=result.data;
+    const w=image.width,h=image.height,stride=packed.width*4;
+    for(let y=0;y<h;y++) {
+      const row=y*stride,dst=y*w*4;
+      for(let x=0;x<w;x++) {
+        const i=row+x*4,j=dst+x*4,mask=i+w*4;
+        const a=Math.round((pixels[mask]+pixels[mask+1]+pixels[mask+2])/3);
+        out[j]=pixels[i];out[j+1]=pixels[i+1];out[j+2]=pixels[i+2];
+        out[j+3]=a<=4?0:a>=250?255:a;
       }
-      function ready() { finish(); }
-      function fail() { finish(new Error('Media failed to load')); }
-      video.addEventListener('loadeddata',ready,{once:true});
-      video.addEventListener('error',fail,{once:true}); video.load();
-    });
-  }
-  function seek(video, time) {
-    if (Math.abs(video.currentTime-time)<.001 && !video.seeking) return Promise.resolve();
-    return new Promise((resolve,reject) => {
-      const timer=setTimeout(()=>finish(new Error('Media seek timeout')),10000);
-      function finish(error) {
-        clearTimeout(timer); video.removeEventListener('seeked',done);
-        video.removeEventListener('error',fail);
-        error?reject(error):resolve();
-      }
-      function done(){finish();}
-      function fail(){finish(new Error('Media seek failed'));}
-      video.addEventListener('seeked',done,{once:true});
-      video.addEventListener('error',fail,{once:true}); video.currentTime=time;
-    });
-  }
-  function playExplosionSound() {
-    if (soundBuffer && audioContext && audioContext.state === 'running') {
-      const node = audioContext.createBufferSource(), gain = audioContext.createGain();
-      gain.gain.value = .55; node.buffer = soundBuffer;
-      node.connect(gain); gain.connect(audioContext.destination);
-      node.start(0,blastLead); sounds.push(node);
     }
+    imageCtx.putImageData(result,0,0);hasImage=true;draw();
   }
   function stop() {
-    generation++; active = false; cancelAnimationFrame(frame); frame = 0;
-    tiger.video.pause(); blast.video.pause();
-    sounds.forEach(node => { try { node.stop(); } catch (_) {} }); sounds = [];
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    button.removeAttribute('aria-busy');
+    generation++;active=false;video.pause();
+    if(callback && video.cancelVideoFrameCallback)video.cancelVideoFrameCallback(callback);
+    callback=0;cancelAnimationFrame(raf);raf=0;clearTimeout(timer);
+    ctx.clearRect(0,0,canvas.width,canvas.height);button.removeAttribute('aria-busy');
   }
-  function keyed(track, flame) {
-    if (track.video.readyState < 2) return false;
-    if (track.time === track.video.currentTime) return true;
-    track.time = track.video.currentTime;
-    const c = track.ctx, w = track.surface.width, h = track.surface.height;
-    c.clearRect(0,0,w,h); c.drawImage(track.video,0,0,w,h);
-    const pixels = c.getImageData(0,0,w,h), d = pixels.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const r = d[i], g = d[i+1], b = d[i+2], m = Math.max(r,b);
-      if (flame) {
-        let a = 1-Math.max(0,Math.min(1,(g-m)/249.9));
-        a = Math.max(0,Math.min(1,(a-.015)/.985));
-        if (a < .025) { d[i+3] = 0; continue; }
-        d[i] = Math.min(255,r/a);
-        d[i+1] = Math.max(0,Math.min(255,(g-(1-a)*255)*.82/a));
-        d[i+2] = Math.min(255,b/a); d[i+3] = Math.round(a*255);
-      } else {
-        const a = Math.max(0,Math.min(1,(65-(g-m))/55));
-        d[i+1] = Math.min(g,m*1.03+3); d[i+3] = Math.round(a*255);
+  function schedule(id) {
+    if(!active || id!==generation)return;
+    if(video.requestVideoFrameCallback) {
+      callback=video.requestVideoFrameCallback((_,metadata)=>{
+        callback=0;if(!active || id!==generation)return;
+        render(metadata.mediaTime);schedule(id);
+      });
+    } else {
+      raf=requestAnimationFrame(()=>{
+        raf=0;if(!active || id!==generation)return;
+        if(video.currentTime!==lastTime)render(video.currentTime);
+        schedule(id);
+      });
+    }
+  }
+  function waitFor(event,action) {
+    return new Promise((resolve,reject)=>{
+      const timeout=setTimeout(()=>finish(new Error('Animation load timeout')),20000);
+      function finish(error) {
+        clearTimeout(timeout);video.removeEventListener(event,done);video.removeEventListener('error',fail);
+        error?reject(error):resolve();
       }
-    }
-    c.putImageData(pixels,0,0); return true;
+      function done(){finish();}function fail(){finish(new Error('Animation failed to load'));}
+      video.addEventListener(event,done,{once:true});video.addEventListener('error',fail,{once:true});
+      try{action();}catch(error){finish(error);}
+    });
   }
-  function paint(now) {
-    if (!active) return;
-    frame = requestAnimationFrame(paint);
-    if (now-lastPaint < 1000/30) return;
-    lastPaint = now;
-    const t = tiger.video.currentTime, w = canvas.width, h = canvas.height;
-    if (tiger.video.ended || t >= 7.15) { stop(); return; }
-    ctx.clearRect(0,0,w,h);
-    if (keyed(tiger,false)) {
-      const mobile = innerWidth <= 640;
-      const height = Math.min(h*(mobile?.72:.82),w*1.4,(mobile?600:800)*(w/innerWidth));
-      const width = height*360/640;
-      ctx.drawImage(tiger.surface,(w-width)/2,(h-height)/2,width,height);
+  async function prepare(name) {
+    if(asset!==name || !ready || video.readyState<2) {
+      ready=false;asset=name;
+      await waitFor('loadeddata',()=>{video.src=media(name);video.load();});
+      ready=true;
+      packed.width=video.videoWidth;packed.height=video.videoHeight;
+      image.width=video.videoWidth/2;image.height=video.videoHeight;
     }
-    if (nextBlast < starts.length && t >= starts[nextBlast]) {
-      nextBlast++; blast.video.currentTime = blastLead; blast.time = -1;
-      blast.video.play().catch(() => {});
-      playExplosionSound();
-    }
-    if (nextBlast && t-starts[nextBlast-1] < 3.15-blastLead && keyed(blast,true)) {
-      const scale = Math.max(w/960,h/540);
-      ctx.drawImage(blast.surface,(w-960*scale)/2,(h-540*scale)/2,960*scale,540*scale);
-    }
+    if(video.currentTime>.001 || video.seeking)await waitFor('seeked',()=>{video.currentTime=0;});
+    lastTime=-1;hasImage=false;
   }
   async function show() {
-    stop(); const id = generation;
-    // Unlock optional audio in the actual click/key gesture, before loading media.
-    if (!reduced.matches) {
-      try {
-        const Audio = window.AudioContext || window.webkitAudioContext;
-        if (!audioContext && Audio) audioContext = new Audio();
-        if (audioContext) audioContext.resume().catch(() => {});
-      } catch (_) {}
-    }
+    // Coalesce taps during loading/seeking; never overlap restarts on one decoder.
+    if(starting)return;
+    stop();starting=true;const id=generation;
     button.setAttribute('aria-busy','true');
     try {
-      if (!prepared) prepared = Promise.all([load(tiger.video),load(blast.video),
-        audioContext ? fetch(media('tiger-explosion.mp3')).then(r => {
-          if (!r.ok) throw new Error('Audio load failed'); return r.arrayBuffer();
-        }).then(data => audioContext.decodeAudioData(data)).then(buffer => {soundBuffer=buffer;}).catch(() => {}) : Promise.resolve()
-      ]).catch(error => {prepared=null;throw error;});
-      await prepared;
-      if (id !== generation || document.hidden) return;
-      button.removeAttribute('aria-busy'); resize();
-      await Promise.all([seek(tiger.video,0),seek(blast.video,blastLead)]);
-      if (id !== generation || document.hidden) return;
-      tiger.time = blast.time = -1; nextBlast = 1; lastPaint = 0;
-      if (reduced.matches) {
-        keyed(tiger,false);
-        const h=Math.min(canvas.height*.6,canvas.width*1.4),w=h*360/640;
-        ctx.drawImage(tiger.surface,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
-        setTimeout(() => {if(id===generation)stop();},1200); return;
+      const name=innerWidth/innerHeight<.85?'tiger-effect-mobile-v1.mp4':'tiger-effect-desktop-v1.mp4';
+      await prepare(name);
+      if(id!==generation || document.hidden)return;
+      resize();button.removeAttribute('aria-busy');
+      if(reduced.matches) {
+        render(0);timer=setTimeout(()=>{if(id===generation)stop();},1200);return;
       }
-      // Reveal only after both videos can play, so the first canvas frame has both layers.
-      await Promise.all([tiger.video.play(),blast.video.play()]);
-      if (id !== generation) return;
-      playExplosionSound();
-      active = true; frame = requestAnimationFrame(paint);
-    } catch (error) { if (id === generation) stop(); console.warn('Tiger effect unavailable:',error.message); }
+      video.muted=false;
+      try{await video.play();}catch(error){
+        if(error.name!=='NotAllowedError')throw error;
+        video.muted=true;await video.play();
+      }
+      if(id!==generation || document.hidden){video.pause();return;}
+      active=true;render(video.currentTime);schedule(id);
+    } catch(error) {
+      if(id===generation){ready=false;stop();console.warn('Tiger effect unavailable:',error.message);}
+    } finally{starting=false;}
   }
-  const touchStyle = document.createElement('style');
-  touchStyle.textContent = '@media(max-width:640px){#tiger-egg{min-width:44px;min-height:44px;margin-block:-10px}}';
-  document.head.appendChild(touchStyle);
-  button.style.touchAction = 'manipulation';
-  button.addEventListener('click',event => {event.preventDefault();show();});
-  window.addEventListener('keydown',event => {if(event.key==='Escape')stop();});
+  const touchStyle=document.createElement('style');
+  touchStyle.textContent='@media(max-width:640px){#tiger-egg{min-width:44px;min-height:44px;margin-block:-10px}}';
+  document.head.appendChild(touchStyle);button.style.touchAction='manipulation';
+  button.addEventListener('click',event=>{event.preventDefault();show();});
+  video.addEventListener('ended',stop);
+  window.addEventListener('keydown',event=>{if(event.key==='Escape')stop();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
-  window.addEventListener('resize',resize); window.addEventListener('pagehide',stop);
-  resize();
+  window.addEventListener('pagehide',stop);window.addEventListener('resize',resize);resize();
 })();
