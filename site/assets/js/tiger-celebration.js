@@ -10,7 +10,8 @@
   if (!ctx) return;
   const source = document.currentScript.src;
   const media = name => new URL('../media/' + name, source).href;
-  const starts = [1.2, 3.95];
+  const starts = [0, 3.95];
+  const blastLead = .30; // Skip the explosion clip's empty green lead-in.
   let generation = 0, frame = 0, active = false, prepared;
   let audioContext, soundBuffer, sounds = [], lastPaint = 0, nextBlast = 0;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -46,6 +47,29 @@
       video.addEventListener('loadeddata',ready,{once:true});
       video.addEventListener('error',fail,{once:true}); video.load();
     });
+  }
+  function seek(video, time) {
+    if (Math.abs(video.currentTime-time)<.001 && !video.seeking) return Promise.resolve();
+    return new Promise((resolve,reject) => {
+      const timer=setTimeout(()=>finish(new Error('Media seek timeout')),10000);
+      function finish(error) {
+        clearTimeout(timer); video.removeEventListener('seeked',done);
+        video.removeEventListener('error',fail);
+        error?reject(error):resolve();
+      }
+      function done(){finish();}
+      function fail(){finish(new Error('Media seek failed'));}
+      video.addEventListener('seeked',done,{once:true});
+      video.addEventListener('error',fail,{once:true}); video.currentTime=time;
+    });
+  }
+  function playExplosionSound() {
+    if (soundBuffer && audioContext && audioContext.state === 'running') {
+      const node = audioContext.createBufferSource(), gain = audioContext.createGain();
+      gain.gain.value = .55; node.buffer = soundBuffer;
+      node.connect(gain); gain.connect(audioContext.destination);
+      node.start(0,blastLead); sounds.push(node);
+    }
   }
   function stop() {
     generation++; active = false; cancelAnimationFrame(frame); frame = 0;
@@ -92,15 +116,11 @@
       ctx.drawImage(tiger.surface,(w-width)/2,(h-height)/2,width,height);
     }
     if (nextBlast < starts.length && t >= starts[nextBlast]) {
-      nextBlast++; blast.video.currentTime = 0; blast.time = -1;
+      nextBlast++; blast.video.currentTime = blastLead; blast.time = -1;
       blast.video.play().catch(() => {});
-      if (soundBuffer && audioContext && audioContext.state === 'running') {
-        const node = audioContext.createBufferSource(), gain = audioContext.createGain();
-        gain.gain.value = .55; node.buffer = soundBuffer;
-        node.connect(gain); gain.connect(audioContext.destination); node.start(); sounds.push(node);
-      }
+      playExplosionSound();
     }
-    if (nextBlast && t-starts[nextBlast-1] < 3.15 && keyed(blast,true)) {
+    if (nextBlast && t-starts[nextBlast-1] < 3.15-blastLead && keyed(blast,true)) {
       const scale = Math.max(w/960,h/540);
       ctx.drawImage(blast.surface,(w-960*scale)/2,(h-540*scale)/2,960*scale,540*scale);
     }
@@ -125,16 +145,19 @@
       await prepared;
       if (id !== generation || document.hidden) return;
       button.removeAttribute('aria-busy'); resize();
-      tiger.video.currentTime = 0; blast.video.currentTime = 0;
-      tiger.time = blast.time = -1; nextBlast = 0; lastPaint = 0;
+      await Promise.all([seek(tiger.video,0),seek(blast.video,blastLead)]);
+      if (id !== generation || document.hidden) return;
+      tiger.time = blast.time = -1; nextBlast = 1; lastPaint = 0;
       if (reduced.matches) {
         keyed(tiger,false);
         const h=Math.min(canvas.height*.6,canvas.width*1.4),w=h*360/640;
         ctx.drawImage(tiger.surface,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
         setTimeout(() => {if(id===generation)stop();},1200); return;
       }
-      await tiger.video.play();
-      if (id !== generation) { tiger.video.pause(); return; }
+      // Reveal only after both videos can play, so the first canvas frame has both layers.
+      await Promise.all([tiger.video.play(),blast.video.play()]);
+      if (id !== generation) return;
+      playExplosionSound();
       active = true; frame = requestAnimationFrame(paint);
     } catch (error) { if (id === generation) stop(); console.warn('Tiger effect unavailable:',error.message); }
   }
