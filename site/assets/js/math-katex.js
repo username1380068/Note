@@ -26,12 +26,14 @@
     document.querySelectorAll('.article .math-source:not(.math-display)').forEach(function(host){
       const math=host.querySelector('.katex')||host.querySelector('math');if(!math)return;
       const parent=host.closest('p,li,td,h1,h2,h3,h4,h5')||host.closest('main.article');
+      if(!parent || parent.clientWidth<1)return;
       host.classList.toggle('math-inline-overflow',math.getBoundingClientRect().width>parent.clientWidth-2);
     });
   }
   function schedule(){if(!queued){queued=true;requestAnimationFrame(fitInline);}}
   schedule();if(document.fonts)document.fonts.ready.then(schedule);
   window.addEventListener('resize',schedule,{passive:true});
+  document.addEventListener('toggle',schedule,true);
 })();
 
 
