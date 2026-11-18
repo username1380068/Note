@@ -28,6 +28,9 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Check shared note layout
+        run: python3 tools/check-note-layout.py
+
       - name: Build website
         run: quarto render
 
