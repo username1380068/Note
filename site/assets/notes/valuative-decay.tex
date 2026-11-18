@@ -1,0 +1,102 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=24mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[hidelinks]{hyperref}
+\usepackage{bookmark}
+\setlength{\emergencystretch}{2em}
+\newtheorem{proposition}{Proposition}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\R}{\mathbb R}
+\newcommand{\OO}{\mathcal O}
+\DeclareMathOperator{\coeff}{coeff}
+\title{Valuative Decay of Normalized Pushforwards}
+\author{}
+\date{}
+\hypersetup{pdftitle={Valuative Decay of Normalized Pushforwards},
+  pdfsubject={A proof for effective Weil real divisors}}
+\begin{document}
+\maketitle
+\vspace{-2.2em}
+
+Let $X$ be a normal projective variety over an arbitrary field $k$.
+For a Weil $\R$-divisor $B$ and a prime divisor
+$F$ on a normal projective birational model $p:Y\to X$, write
+$v_F(B)=\coeff_F(p^*B)$, where $p^*$ denotes the asymptotic pullback.
+We use its monotonicity and its agreement with the usual pullback on
+$\Q$-Cartier divisors. All divisor inequalities are coefficientwise;
+intersections of Cartier divisors with Weil divisors are understood
+as intersection numbers of cycles.
+
+\begin{proposition}
+Let $f:X\to X$ be a finite surjective int-amplified endomorphism.
+For every effective Weil $\R$-divisor $D$ and every divisorial valuation
+$v_F$ over $X$, one has
+\[
+ \lim_{i\to\infty}
+ v_F\!\left(\frac{(f^i)_*D}{\deg(f^i)}\right)=0.
+\]
+\end{proposition}
+
+\begin{proof}
+Choose an ample Cartier divisor $H$ and a rational number $\lambda>1$
+such that $f^*H-\lambda H$ is ample.
+
+\smallskip
+\noindent\textit{Step 1. Construct effective $\Q$-Cartier upper bounds.}
+Choose an effective Cartier divisor $C\ge D$ and an integer $m>0$
+such that $mH-C$ is ample. Such a $C$ exists: for $a\gg0$, a nonzero
+section of $\OO_X(aH-\lceil D\rceil)$ gives a divisor $C\in|aH|$
+dominating $D$. For $i\ge1$, the identity
+\[
+ (f^i)^*H-\lambda^iH
+ =\sum_{j=0}^{i-1}\lambda^{i-1-j}(f^j)^*(f^*H-\lambda H)
+\]
+shows that $(f^i)^*H-\lambda^iH$ is ample, since finite pullbacks
+preserve ampleness. Hence
+\[
+ m\lambda^{-i}(f^i)^*H-C
+ =(mH-C)+m\lambda^{-i}\bigl((f^i)^*H-\lambda^iH\bigr)
+\]
+is ample. Take an effective $\Q$-Cartier divisor
+$G_i\sim_{\Q}m\lambda^{-i}(f^i)^*H-C$, and set
+\[
+ M_i:=\frac{(f^i)_*(C+G_i)}{\deg(f^i)}.
+\]
+Since $C+G_i\ge D$, we obtain
+\begin{equation}\label{eq:upper}
+ 0\le \frac{(f^i)_*D}{\deg(f^i)}\le M_i\sim_{\Q}m\lambda^{-i}H.
+\end{equation}
+Here pushforward preserves $\Q$-linear equivalence by the norm formula,
+and $(f^i)_*(f^i)^*H=\deg(f^i)H$. In particular, $M_i$ is
+$\Q$-Cartier.
+
+\smallskip
+\noindent\textit{Step 2. Estimate the coefficient on a fixed model.}
+Fix a normal projective birational model $p:Y\to X$ carrying $F$,
+and choose an ample Cartier divisor $A$ on $Y$. Put $n=\dim X$ and
+$a_{F,i}=v_F((f^i)_*D/\deg(f^i))$. By monotonicity and
+\eqref{eq:upper},
+\[
+ 0\le a_{F,i}F\le p^*M_i.
+\]
+Intersecting with $A^{n-1}$ gives
+\[
+ \begin{aligned}
+ 0\le a_{F,i}(F\cdot A^{n-1})
+ &\le p^*M_i\cdot A^{n-1}\\
+ &=m\lambda^{-i}(p^*H\cdot A^{n-1}).
+ \end{aligned}
+\]
+Since $A$ is ample, the prime cycle $F$ has positive degree
+$F\cdot A^{n-1}>0$. It follows that
+\[
+ 0\le v_F\!\left(\frac{(f^i)_*D}{\deg(f^i)}\right)=a_{F,i}
+ \le m\lambda^{-i}
+ \frac{p^*H\cdot A^{n-1}}{F\cdot A^{n-1}}
+ \longrightarrow0.
+\]
+\end{proof}
+
+\end{document}
