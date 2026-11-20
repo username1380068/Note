@@ -1,0 +1,111 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=24mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[hidelinks]{hyperref}
+\usepackage{bookmark}
+\setlength{\emergencystretch}{2em}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\R}{\mathbb R}
+\newcommand{\C}{\mathbb C}
+\DeclareMathOperator{\Cl}{Cl}
+\DeclareMathOperator{\Supp}{Supp}
+\DeclareMathOperator{\coeff}{coeff}
+\title{Local $\Q$-Triviality of the Canonical Divisor}
+\author{}
+\date{}
+\hypersetup{pdftitle={Local Q-Triviality of the Canonical Divisor},
+  pdfsubject={Statements following the handwritten outline; proofs to be added}}
+
+\begin{document}
+\maketitle
+\vspace{-2.2em}
+
+Let $X$ be a normal projective variety over $\C$, and let $f:X\to X$
+be an int-amplified endomorphism. Set
+\[
+ P:=\frac{f_*}{\deg f}.
+\]
+For a finite surjective morphism $h$, write $R_h$ for its ramification
+divisor. For birational morphisms, we use the Weil pullback.
+For a prime divisor $F$ on a normal proper birational model $p:Y\to X$,
+write $c_X(F)=p(F)$ and
+\[
+ a^+(F,X,0):=\coeff_F\bigl(K_Y+p^*(-K_X)\bigr).
+\]
+Canonical divisors are chosen compatibly.
+
+\begin{lemma}\label{lem:polynomial}
+There exists a polynomial $q(t)\in\Q[t]$ such that
+\[
+ q(P)=0\quad\text{on }\Cl(X)_{\Q},
+ \qquad q(1)\ne0.
+\]
+\end{lemma}
+% Proof of Lemma 1: to be added by the user.
+% \begin{proof}
+% \end{proof}
+
+\begin{lemma}\label{lem:decomposition}
+There exist an integer $N\ge1$ and rational numbers
+$a_1,\ldots,a_N,b_1,\ldots,b_N$ such that
+\[
+ K_X\sim_{\Q}\sum_{i=1}^N a_iP^iR_f
+     =\sum_{i=1}^N b_iP^iR_{f^i}.
+\]
+\end{lemma}
+% Proof of Lemma 2: to be added by the user.
+% \begin{proof}
+% \end{proof}
+
+\begin{lemma}\label{lem:finite-base-change}
+Consider a commutative diagram of normal varieties
+\[
+ \begin{array}{ccc}
+  Y'&\xrightarrow{\ f'\ }&Y\\[2pt]
+  {\scriptstyle p'}\downarrow&&\downarrow{\scriptstyle p}\\[2pt]
+  X_s&\xrightarrow{\ f\ }&X_t,
+ \end{array}
+\]
+where $f,f'$ are finite surjective and $p,p'$ are proper birational.
+For every Weil $\R$-divisor $D$ on $X_t$, one has
+\[
+ (f')^*(p^*D)=(p')^*(f^*D).
+\]
+\end{lemma}
+% Source for the statement: Boucksom--de Fernex--Favre,
+% The volume of an isolated singularity, Proposition 2.19 and Remark 2.4.
+% https://arxiv.org/pdf/1011.2847
+% Proof of Lemma 3: to be added by the user.
+% \begin{proof}
+% \end{proof}
+
+\begin{proposition}\label{prop:avoidance}
+Let $F$ be a prime divisor over $X$ with $a^+(F,X,0)=-1$, and set
+$Z=c_X(F)$. Then, for every integer $i\ge1$,
+\[
+ \eta_Z\notin\Supp\bigl((f^i)_*R_{f^i}\bigr).
+\]
+\end{proposition}
+% Proof of Proposition 1: to be added by the user.
+% The proof may use the previously established global lower bound
+% a^-(E,X,0) >= -1 under the int-amplified hypothesis.
+% \begin{proof}
+% \end{proof}
+
+\begin{proposition}\label{prop:local-q-triviality}
+Let $F$ be a prime divisor over $X$ with $a^+(F,X,0)=-1$, and set
+$Z=c_X(F)$. There exists an open neighborhood $U\subseteq X$ of
+$\eta_Z$ such that
+\[
+ K_X|_U\sim_{\Q}0.
+\]
+\end{proposition}
+% Proof of Proposition 2: to be added by the user.
+% \begin{proof}
+% \end{proof}
+
+\end{document}
