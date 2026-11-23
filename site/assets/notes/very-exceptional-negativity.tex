@@ -1,0 +1,87 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=23mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,amsmath,amssymb,amsthm,microtype}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\setlength{\emergencystretch}{1em}
+\DeclareMathOperator{\Supp}{Supp}
+\newtheorem*{lemma}{Lemma}
+\hypersetup{pdftitle={Very exceptional negativity}}
+\pagestyle{empty}
+\begin{document}
+\begin{center}\large\bfseries Very exceptional negativity\end{center}
+We adapt the critical-coefficient argument in the
+\href{https://username1380068.github.io/Note/notes/negativity.html}{negativity note}
+to \href{https://www.numdam.org/article/PMIHES_2012__115__325_0.pdf}{Birkar's Lemma~3.3}.
+
+\begin{lemma}
+Let $f:X\to Z$ be a projective contraction of normal varieties over an
+uncountable algebraically closed field $k$,
+and let $D=D^+-D^-$ be an $\mathbb R$-Cartier divisor, where $D^\pm\ge0$
+have no common components. Suppose that $D^-$ is very exceptional over $Z$
+and, for every component $S$ of $D^-$, $-D|_S$ is nef on the very general
+curves of $S/Z$. Then $D\ge0$.
+\end{lemma}
+
+\begin{proof}
+Suppose $D^-\ne0$. Shrinking $Z$, we may assume that $Z$ is affine and all
+components $D_i$ of $D^-$ map onto the same irreducible closed subset
+$P\subsetneq Z$. Choose an effective Cartier divisor $A$ containing $P$, and set
+\[
+ e=\min\{t\ge0:D+t f^*A\ge0\},\qquad
+ G=D+e f^*A,\qquad
+ S=\bigcup_{\operatorname{coeff}_{D_i}G=0}D_i.
+\]
+Then $e>0$, $S\ne\varnothing$, no component of $S$ is contained in
+$\Supp G$, and $\Supp f^*A\subset S\cup\Supp G$.
+
+Choose a prime component $R$ of $A$ containing $P$. Very exceptionality
+gives a prime divisor $Q$ with $f(Q)=R$ and $Q\not\subset\Supp D^-$;
+hence $Q\subset\Supp G$. Every fibre over $P$ therefore meets both $S$
+and $\Supp G$, and is covered by their union. Connectedness gives
+\[
+ P=\bigcup_{D_i\subset S}f(D_i\cap\Supp G).
+\]
+The images are closed, so irreducibility of $P$ yields a component
+$D_i\subset S$ such that $F:=D_i\cap\Supp G$ dominates $P$.
+
+Put $d=\dim D_i-\dim P$. We have
+$d=(\dim X-\dim Z)+\operatorname{codim}_ZP-1\ge1$:
+if $\dim X=\dim Z$, then $f$ is birational and very exceptionality gives
+$\operatorname{codim}_ZP\ge2$.
+
+Here the very-general-nef hypothesis means that
+\[
+\begin{gathered}
+ \exists(\Delta_j)_{j\ge1},\quad \Delta_j\subsetneq D_i\text{ closed},
+ \quad\forall\text{ integral curves }C\subset D_i:\\
+ \dim f(C)=0,\quad C\not\subset\bigcup_j\Delta_j
+ \quad\Longrightarrow\quad D\cdot C\le0.
+\end{gathered}
+\tag{VG}
+\]
+To contradict this, we show that for \emph{every} countable family of proper
+closed subsets $(\Delta_j)_{j\ge1}$ of $D_i$, there is an integral curve
+$C\subset D_i$ such that
+\[
+ \dim f(C)=0,\qquad C\not\subset\bigcup_j\Delta_j,
+ \qquad D\cdot C>0.
+\tag{$*$}
+\]
+Fix any such family. Write $W_z=W\cap f^{-1}(z)$ for $W\subset D_i$.
+For a very general $z\in P$, the fibre
+$(D_i)_z$ is pure of dimension $d$, while $F_z$ and every $(\Delta_j)_z$
+have dimension at most $d-1$. Since $F_z\ne\varnothing$, some irreducible
+component $T$ of $(D_i)_z$ meets $F$ but is contained in neither $\Supp G$
+nor any $\Delta_j$. A very general ample complete-intersection curve
+$C\subset T$ (or $C=T$ if $d=1$) is contained in none of these bad sets
+and satisfies $G\cdot C>0$, since $G|_T$ is nonzero and effective.
+As $f(C)$ is a point, we obtain
+\[
+ D\cdot C=(G-e f^*A)\cdot C=G\cdot C>0.
+\]
+This proves $(*)$, contradicting (VG).
+\end{proof}
+\end{document}
