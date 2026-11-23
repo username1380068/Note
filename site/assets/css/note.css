@@ -76,6 +76,16 @@ main.article,.notelayout main.article{min-width:0;width:100%;max-width:784px;mar
 .article .math-display.math-fallback>math{display:block;width:max-content;min-width:100%;max-width:none;margin:0;text-align:center}
 .article .math-inline-overflow{display:inline-block;max-width:100%;overflow-x:auto;overflow-y:hidden;vertical-align:middle;padding:3px 0;scrollbar-width:thin}
 .article .katex:has(>.math-display){display:block;min-width:0;max-width:100%}
+/* Equation labels are part of the page, including when MathML is used directly. */
+.article .numbered-equation{display:grid;grid-template-columns:3em minmax(0,1fr) 3em;align-items:center;margin:20px 0}
+.article .numbered-equation>.equation-body{grid-column:2;min-width:0}
+.article .numbered-equation>.equation-body:has(>math){overflow-x:auto;padding:6px 1px}
+.article .numbered-equation .math-source.math-display{margin:0}
+.article .numbered-equation>figcaption{grid-column:3;justify-self:end;color:var(--soft);font-size:.95em;font-weight:500;line-height:1.25;white-space:nowrap}
+@media(max-width:400px){
+ .article .numbered-equation{grid-template-columns:minmax(0,1fr);row-gap:2px}
+ .article .numbered-equation>.equation-body,.article .numbered-equation>figcaption{grid-column:1}
+}
 a.xref{text-decoration:none;border-bottom:1px solid rgba(154,59,44,.3)}
 
 /* Keep the article centered whether or not a section outline is present. */
